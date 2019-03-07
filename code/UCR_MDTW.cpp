@@ -27,11 +27,10 @@
 /***********************************************************************/
 /***********************************************************************/
 
-// todo howto lauch: g++ UCR_MDTW.cpp -o mdtw
-// todo howto lauch: g++ UCR_DTW.cpp -o dtw
-// todo howto lauch: ./mdtw s_query.txt s_query.txt 500 100
-// todo howto lauch: ./dtw s_query.txt s_query.txt 500 100
-
+// todo how to launch: g++ UCR_MDTW.cpp -o mdtw
+// todo how to launch: g++ UCR_DTW.cpp -o dtw
+// todo how to launch: ./mdtw s_query.txt s_query.txt 500 100
+// todo how to launch: ./dtw s_query.txt s_query.txt 500 100
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,7 +50,7 @@ using namespace std;
 
 /// Data structure for sorting the query
 typedef struct Index // todo MDTW
-{   double* value;
+{   double value[DIM];
     int    index;
 } Index;
 
@@ -153,11 +152,16 @@ int comp(const void *a, const void* b)
     double v_x = 0, v_y = 0;
 
     for (int i = 0; i < DIM; i++) {
-        v_x += x->value[i] * x->value[i];
-        v_y += y->value[i] * y->value[i];
+        v_x += pow(x->value[i], 2);
+        v_y += pow(y->value[i], 2);
     }
 
-    return v_y - v_x;   // high to low todo MDTW
+    if ((v_y - v_x) > 0)
+        return 1;
+    else if ((v_y - v_x) < 0)
+        return -1;
+    else
+        return 0;
 }
 
 /// Initial the queue at the begining step of envelop calculation
@@ -170,7 +174,7 @@ void init(deque *d, int capacity)
     d->r = d->capacity-1;
 }
 
-/// Init dynamic array // todo MDTW
+/// Init dynamic array
 void init_array(double** &array, int size, int dim) {
 
     array = (double **)calloc(size, sizeof(double*));
@@ -183,7 +187,7 @@ void init_array(double** &array, int size, int dim) {
     }
 }
 
-/// Free dynamic array // todo MDTW
+/// Free dynamic array
 void destroy_array(double** &array, int size) {
     for (int i = 0; i < size; i++) {
         free(array[i]);
@@ -252,7 +256,6 @@ int empty(struct deque *d)
 /// "Faster Retrieval with a Two-Pass Dynamic-Time-Warping Lower Bound", Pattern Recognition 42(9), 2009.
 void lower_upper_lemire(double **t, int len, int r, double **l)
 {
-//    struct deque du, dl;
 
     struct deque *dl;
 
@@ -263,22 +266,15 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
         init(&dl[d], 2 * r + 2);
         push_back(&dl[d], 0);
     }
-//    init(&du, 2*r+2);
-//    init(&dl, 2*r+2);
-
-//    push_back(&du, 0);
-//    push_back(&dl, 0);
 
     for (int i = 1; i < len; i++)
     {
         for (int d = 0; d < DIM; d++) {
             if (i > r)
             {
-                for (int j = 0; j < 2 ; j++) {
-                    l[i - r - 1][d * 2 + j] = t[front(&dl[d * 2 + j])][d];
-                }
-    //            u[i-r-1] = t[front(&du)];
-    //            l[i-r-1] = t[front(&dl)];
+                l[i - r - 1][d * 2] = t[front(&dl[d * 2])][d];
+                l[i - r - 1][d * 2 + 1] = t[front(&dl[d * 2 + 1])][d];
+
             }
             if (t[i][d] > t[(i-1)][d])
             {
@@ -288,9 +284,6 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
                     pop_back(&dl[d * 2]);
                 }
 
-//                pop_back(&du);
-//                while (!empty(&du) && t[i] > t[back(&du)])
-//                    pop_back(&du);
             }
             else
             {
@@ -298,9 +291,6 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
                 while (!empty(&dl[d * 2 + 1]) && t[i][d] < t[back(&dl[d * 2 + 1])][d])
                     pop_back(&dl[d * 2 + 1]);
 
-//                pop_back(&dl);
-//                while (!empty(&dl) && t[i] < t[back(&dl)])
-//                    pop_back(&dl);
             }
 
             push_back(&dl[d * 2], i);
@@ -310,17 +300,8 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
             else if (i == 2 * r + 1 + front(&dl[d * 2 + 1]))
                 pop_front(&dl[d * 2 + 1]);
 
-//            push_back(&du, i);
-//            push_back(&dl, i);
-//            if (i == 2 * r + 1 + front(&du))
-//                pop_front(&du);
-//            else if (i == 2 * r + 1 + front(&dl))
-//                pop_front(&dl);
         }
     }
-
-    cout << "Location : " << l[len - 1] << endl;
-//    cout << "Distance : " << sqrt(bsf) << e
 
     for (int i = len; i < len+r+1; i++)
     {
@@ -333,12 +314,6 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
                 pop_front(&dl[s * 2 + 1]);
         }
 
-//        u[i-r-1] = t[front(&du)];
-//        l[i-r-1] = t[front(&dl)];
-//        if (i-front(&du) >= 2 * r + 1)
-//            pop_front(&du);
-//        if (i-front(&dl) >= 2 * r + 1)
-//            pop_front(&dl);
     }
 
     for (int s = 0; s < DIM; s++) {
@@ -347,8 +322,7 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
     }
 
     free(dl);
-//    destroy(&du);
-//    destroy(&dl);
+
 }
 
 /// Calculate quick lower bound
@@ -357,14 +331,9 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
 /// And using the first and last points can be computed in constant time.
 /// The prunning power of LB_Kim is non-trivial, especially when the query is not long, say in length 128.
 double lb_kim_hierarchy(double **t, double **q, int j, int len, double* mean, double *std, double bsf = INF)
-//double lb_kim_hierarchy(double **t, double **q, int j, int len, double mean, double std, double bsf = INF)
 {
     /// 1 point at front and back
     double lb;
-//    double x0 = (t[j] - mean) / std;
-//    double y0 = (t[(len-1+j)] - mean) / std;
-//    lb = dist(x0,q[0]) + dist(y0,q[len-1]);
-//    if (lb >= bsf)   return lb;
 
     double x0[DIM];
     double y0[DIM];
@@ -392,7 +361,6 @@ double lb_kim_hierarchy(double **t, double **q, int j, int len, double* mean, do
     for (int s = 0; s < DIM; s++) {
         x1[s] = (t[(j + 1)][s] - mean[s]) / std[s];
     }
-//    double x1 = (t[(j+1)] - mean) / std;
 
 
 
@@ -407,7 +375,7 @@ double lb_kim_hierarchy(double **t, double **q, int j, int len, double* mean, do
     for (int s = 0; s < DIM; s++) {
         y1[s] = (t[(len - 2 + j)][s] - mean[s]) / std[s];
     }
-//    double y1 = (t[(len-2+j)] - mean) / std;
+
     d = min(dim_dist(y1, q[len - 1], ddd[3]), dim_dist(y0, q[len - 2], ddd[4])); // todo check
     d = min(d, dim_dist(y1, q[len - 2], ddd[5]));
     lb += sum(d, DIM);
@@ -419,7 +387,7 @@ double lb_kim_hierarchy(double **t, double **q, int j, int len, double* mean, do
     for (int s = 0; s < DIM; s++) {
         x2[s] = (t[(j + 2)][s] - mean[s]) / std[s];
     }
-//    double x2 = (t[(j+2)] - mean) / std;
+
     d = min(dim_dist(x0, q[2], ddd[6]), dim_dist(x1, q[2], ddd[7]));
     d = min(d, dim_dist(x2, q[2], ddd[8]));
     d = min(d, dim_dist(x2, q[1], ddd[9]));
@@ -462,11 +430,14 @@ double lb_keogh_cumulative(int* order, double **t, double **lo, double **cb, int
     {
         for (int s = 0; s < DIM; s++) {
             x = (t[(order[i] + j)][s] - mean[s]) / std[s];
+            d = 0;
 
-            if (x > lo[i][s * 2])
+            if (x > lo[i][s * 2]) {
                 d = dist(x, lo[i][s * 2]);
-            else if (x < lo[i][s * 2 + 1])
+            }
+            else if (x < lo[i][s * 2 + 1]) {
                 d = dist(x, lo[i][2 * s + 1]);
+            }
 
             lb += d;
             cb[order[i]][s] = d;
@@ -491,23 +462,28 @@ double lb_keogh_data_cumulative(int* order, double **tz, double **qo, double **c
     for (int i = 0; i < len && lb < best_so_far; i++)
     {
         for (int s = 0; s < DIM; s++) {
-            ll[s * 2] = (l[i][s * 2] - mean[s]) / std[s];
-            ll[s * 2 + 1] = (l[i][s * 2 + 1] - mean[s]) / std[s];
+            ll[s * 2] = (l[order[i]][s * 2] - mean[s]) / std[s];
+            ll[s * 2 + 1] = (l[order[i]][s * 2 + 1] - mean[s]) / std[s];
 
-//        uu = (u[order[i]]-mean)/std;
-//        ll = (l[order[i]]-mean)/std;
             d = 0;
             if (qo[i][s] > ll[s * 2])
                 d = dist(qo[i][s], ll[s * 2]);
-            else {
-                if (qo[i][s] < ll[s * 2 + 1])
+            else if (qo[i][s] < ll[s * 2 + 1]) {
                     d = dist(qo[i][s], ll[s * 2 + 1]);
             }
+
             lb += d;
             cb[order[i]][s] = d;
         }
     }
     return lb;
+}
+
+/// Print function for debugging
+void printArray(double *x, int len)
+{   for(int i=0; i<len; i++)
+        printf(" %6.2lf",x[i]);
+    printf("\n");
 }
 
 /// Calculate Dynamic Time Wrapping distance
@@ -537,9 +513,11 @@ double dtw(double **A, double **B, double **cb, int m, int r, double bsf = INF)
 
         for(j = max(0, i - r); j <= min(m - 1, i + r); j++, k++)
         {
+
             /// Initialize all row and column
             if ((i == 0) && (j == 0))
             {
+
                 cost[k] = dist(A[0],B[0]); // todo metrics
                 min_cost = cost[k];
                 continue;
@@ -578,16 +556,10 @@ double dtw(double **A, double **B, double **cb, int m, int r, double bsf = INF)
 
     /// the DTW distance is in the last cell in the matrix of size O(m^2) or at the middle of our array.
     double final_dtw = cost_prev[k];
+
     free(cost);
     free(cost_prev);
     return final_dtw;
-}
-
-/// Print function for debugging
-void printArray(double *x, int len)
-{   for(int i=0; i<len; i++)
-        printf(" %6.2lf",x[i]);
-    printf("\n");
 }
 
 /// Main Function
@@ -646,9 +618,6 @@ int main(  int argc , char *argv[] )
 
     /// malloc everything here
 
-
-//    double *q = (double*)calloc(m * DIM, sizeof(double));
-
     init_array(q, m, DIM);
 
     init_array(qo, m, DIM);
@@ -678,7 +647,6 @@ int main(  int argc , char *argv[] )
     i = 0;
     j = 0;
 
-//    ex[];
     ex = (double*)calloc(DIM, sizeof(double));
     ex2 = (double*)calloc(DIM, sizeof(double));
     m_ex = (double*)calloc(DIM, sizeof(double));
@@ -704,21 +672,23 @@ int main(  int argc , char *argv[] )
 
         ex[s] = ex[s] / m;
         ex2[s] = ex2[s] / m;
-        std[s] = sqrt(ex2[s] - ex[s]);
+        std[s] = sqrt(ex2[s] - ex[s] * ex[s]);
 
         for (i = 0; i < m; i++) {
 
             q[i][s] = (q[i][s] - ex[s]) / std[s];
         }
     }
+
     /// Create envelop of the query: lower envelop, l, and upper envelop, u
     lower_upper_lemire(q, m, r, l);
-//    lower_upper_lemire(q, m, r, l, u);
 
     /// Sort the query one time by abs(z-norm(q[i]))
     for( i = 0; i < m; i++)
     {
-        Q_tmp[i].value = q[i];
+        for (int s = 0; s < DIM; s++) {
+            Q_tmp[i].value[s] = q[i][s];
+        }
         Q_tmp[i].index = i;
     }
     qsort(Q_tmp, m, sizeof(Index), comp);
@@ -728,11 +698,11 @@ int main(  int argc , char *argv[] )
 
         int o = Q_tmp[i].index;
         order[i] = o;
-        qo[i] = q[o];
-//        uo[i] = u[o];
-//        lo[i] = l[o];
-        for (int k = 0; k < 2 * DIM; k++) {
-            lo[k][i] = l[k][o];
+
+        for (int s = 0; s < DIM; s++) {
+            qo[i][s] = q[o][s];
+            lo[i][s] = l[o][s];
+            lo[i][s + 1] = l[o][s + 1];
         }
     }
     free(Q_tmp);
@@ -756,28 +726,28 @@ int main(  int argc , char *argv[] )
     long long I;    /// the starting index of the data in current chunk of size EPOCH
 
     int b = 0;
-    printf("----");
 
     while(!done)
     {
         /// Read first m-1 points
         ep = 0;
         if (it == 0)
-        {   for(k = 0; k < (m - 1) * DIM; k++)
-                if (fscanf(fp,"%lf",&d) != EOF)
+        {   for(k = 0; k < (m - 1) * DIM; k++) {
+                if (fscanf(fp, "%lf", &d) != EOF) {
                     buffer[k / DIM][k % DIM] = d;
+                }
+            }
         }
         else
-        {   for(k = 0; k < (m - 1) * DIM; k++)
+        {   for(k = 0; k < (m - 1) * DIM; k++) {
                 buffer[k / DIM][k % DIM] = buffer[EPOCH - m + 1 + k / DIM][k % DIM];
+            }
         }
 
         /// Read buffer of size EPOCH or when all data has been read.
         ep = m - 1;
 
         b = 0;
-//        printf("----, %d", ep);
-        cout << "Location : " << ep << endl;
 
         while(ep < EPOCH)
         {
@@ -791,8 +761,6 @@ int main(  int argc , char *argv[] )
             if (b == 1) break;
             ep++;
         }
-//        printf("----, %d", ep);
-        cout << "Location : " << ep << endl;
 
         /// Data are read in chunk of size EPOCH.
         /// When there is nothing to read, the loop is end.
@@ -800,30 +768,23 @@ int main(  int argc , char *argv[] )
 
             done = true;
         } else {
-//            if (ep % 10000 == 0) {
-                printf("----");
-//            }
-            cout << "Location : " << ep << endl;
 
             lower_upper_lemire(buffer, ep, r, l_buff);
-            cout << "Location : " << ep << endl;
 
-//        {   lower_upper_lemire(buffer, ep, r, l_buff, u_buff);
 
             /// Just for printing a dot for approximate a million point. Not much accurate.
-//            if (it % (1000000 / (EPOCH - m + 1)) == 0)
-//                fprintf(stderr, ".");
+            if (it % (1000000 / (EPOCH - m + 1)) == 0)
+                fprintf(stderr, ".");
 
             /// Do main task here..
-            memset(ex, 0, DIM);
-            memset(ex2, 0, DIM);
-            memset(std, 0, DIM);
+            for (int s = 0; s < DIM; s++) {
+                ex[s] = 0;
+                ex2[s] = 0;
+                std[s] = 0;
+            }
 
             for(i = 0; i < ep; i++) {
-                if (i % 10000 == 0) {
-                    cout << "Location 1: " << i << endl;
-                    cout << "BSF 1: " << bsf << endl;
-                }
+
                 for (int s = 0; s < DIM; s++) {
                     /// A bunch of data has been read and pick one of them at a time to use
                     d = buffer[i][s];
@@ -835,6 +796,7 @@ int main(  int argc , char *argv[] )
                     /// t is a circular array for keeping current data
                     t[i % m][s] = d;
 
+
                     /// Double the size for avoiding using modulo "%" operator
                     t[(i % m) + m][s] = d;
 
@@ -843,13 +805,11 @@ int main(  int argc , char *argv[] )
                 /// Start the task when there are more than m-1 points in the current chunk
                 if( i >= (m - 1) * DIM)
                 {
-//                    mean = 0;
                     for (int s = 0; s < DIM; s++) {
                         m_ex[s] = ex[s] / m;
                         m_ex2[s] = ex2[s] / m;
-                        std[s] = sqrt(m_ex2[s] - m_ex[s]);
+                        std[s] = sqrt(m_ex2[s] - m_ex[s]*m_ex[s]);
                     }
-
 
                     /// compute the start location of the data in the current circular array, t
                     j = (i + 1) % m;
@@ -869,14 +829,16 @@ int main(  int argc , char *argv[] )
                             /// Take another linear time to compute z_normalization of t.
                             /// Note that for better optimization, this can merge to the previous function.
                             for(k = 0; k < m; k++) {
-                                for (int s = 0; s < DIM; s++)
-                                    tz[k][s] = (t[(k + j)][s] - ex[s]) / std[s];
+                                for (int s = 0; s < DIM; s++) {
+                                    tz[k][s] = (t[(k + j)][s] - m_ex[s]) / std[s];
+                                }
                             }
 
                             /// Use another lb_keogh to prune
                             /// qo is the sorted query. tz is unsorted z_normalized data.
                             /// l_buff, u_buff are big envelop for all data in this chunk
                             lb_k2 = lb_keogh_data_cumulative(order, tz, qo, cb2, l_buff + I, m, m_ex, std, bsf);
+
                             if (lb_k2 < bsf)
                             {
                                 /// Choose better lower bound between lb_keogh and lb_keogh2 to be used in early abandoning DTW
@@ -938,8 +900,8 @@ int main(  int argc , char *argv[] )
 
     i = (it) * (EPOCH - m + 1) + ep;
 
-    free(q);
-//    destroy_array(q, m);
+//    free(q);
+    destroy_array(q, m);
     destroy_array(qo, m);
     destroy_array(lo, m);
     free(order);
