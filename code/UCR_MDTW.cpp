@@ -2,7 +2,7 @@
 // Created by Смирнов Влад on 2019-02-24.
 //
 
-#include "UCR_MDTW.h"
+//#include "UCR_MDTW.hpp"
 
 /***********************************************************************/
 /************************* DISCLAIMER **********************************/
@@ -29,13 +29,14 @@
 
 // todo how to launch: g++ UCR_MDTW.cpp -o mdtw
 // todo how to launch: g++ UCR_DTW.cpp -o dtw
-// todo how to launch: ./mdtw s_query.txt s_query.txt 500 100
-// todo how to launch: ./dtw s_query.txt s_query.txt 500 100
+// todo how to launch: ./mdtw s_query.txt s_query.txt 5000 100
+// todo how to launch: ./dtw s_query.txt s_query.txt 5000 100
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <cstring>
 #include <iostream>
 
 //#define min(x,y) ((x)<(y)?(x):(y))
@@ -44,7 +45,7 @@
 
 #define INF 1e20       //Pseudo Infitinte number for this code
 
-#define DIM 1
+#define DIM 2
 
 using namespace std;
 
@@ -672,7 +673,7 @@ int main(  int argc , char *argv[] )
 
         ex[s] = ex[s] / m;
         ex2[s] = ex2[s] / m;
-        std[s] = sqrt(ex2[s] - ex[s] * ex[s]);
+        std[s] = sqrt(fabs(ex2[s] - ex[s] * ex[s]));
 
         for (i = 0; i < m; i++) {
 
@@ -808,7 +809,7 @@ int main(  int argc , char *argv[] )
                     for (int s = 0; s < DIM; s++) {
                         m_ex[s] = ex[s] / m;
                         m_ex2[s] = ex2[s] / m;
-                        std[s] = sqrt(m_ex2[s] - m_ex[s]*m_ex[s]);
+                        std[s] = sqrt(fabs(m_ex2[s] - m_ex[s]*m_ex[s]));
                     }
 
                     /// compute the start location of the data in the current circular array, t
