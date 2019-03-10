@@ -457,8 +457,6 @@ double lb_keogh_cumulative(int *order, double **t, double **bounds, double **cb,
     double lb = 0;
     double x, d;
 
-    cout << "x = HUI"  << endl;
-
     for (int i = 0; i < len && lb < best_so_far; i++)
     {
         for (int s = 0; s < DIM; s++)
@@ -621,7 +619,7 @@ int main(int argc, char *argv[])
     double bsf;          /// best-so-far
     double **t, **q;       /// data array and query array
     int *order;          /// new order of the query
-    double **l, **qo, **lo, **tz, **cb, **cb1, **cb2, **l_d;
+    double **l, **qo, **bounds, **tz, **cb, **cb1, **cb2, **l_d;
 
 
     double d;
@@ -673,7 +671,7 @@ int main(int argc, char *argv[])
     init_array(q, m, DIM);
 
     init_array(qo, m, DIM);
-    init_array(lo, m, DIM);
+    init_array(bounds, m, 2 * DIM);
 
     order = (int *) malloc(sizeof(int) * m);
     if (order == NULL)
@@ -758,8 +756,8 @@ int main(int argc, char *argv[])
         for (int s = 0; s < DIM; s++)
         {
             qo[i][s] = q[o][s];
-            lo[i][s] = l[o][s];
-            lo[i][s + 1] = l[o][s + 1];
+            bounds[i][2 * s] = l[o][2 * s];
+            bounds[i][2 * s + 1] = l[o][2 * s + 1];
         }
     }
     free(Q_tmp);
@@ -892,7 +890,7 @@ int main(int argc, char *argv[])
                     {
                         /// Use a linear time lower bound to prune; z_normalization of t will be computed on the fly.
                         /// uo, lo are envelop of the query.
-                            lb_k = lb_keogh_cumulative(order, t, lo, cb1, j, m, m_ex, std, bsf);
+                            lb_k = lb_keogh_cumulative(order, t, bounds, cb1, j, m, m_ex, std, bsf);
                         if (lb_k < bsf)
                         {
                             /// Take another linear time to compute z_normalization of t.
@@ -980,7 +978,7 @@ int main(int argc, char *argv[])
 //    free(q);
     destroy_array(q, m);
     destroy_array(qo, m);
-    destroy_array(lo, m);
+    destroy_array(bounds, m);
     free(order);
     destroy_array(l, m);
     destroy_array(cb, m);
