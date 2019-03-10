@@ -616,8 +616,8 @@ int main(int argc, char *argv[])
 {
     FILE *fp;            /// data file pointer
     FILE *qp;            /// query file pointer
-    double bsf;          /// best-so-far
-    double **t, **q;       /// data array and query array
+    double best_so_far;          /// best-so-far
+    double **query, **search_query;       /// data array and query array
     int *order;          /// new order of the query
     double **l, **qo, **bounds, **tz, **cb, **cb1, **cb2, **l_d;
 
@@ -668,7 +668,7 @@ int main(int argc, char *argv[])
 
     /// malloc everything here
 
-    init_array(q, m, DIM);
+    init_array(search_query, m, DIM);
 
     init_array(qo, m, DIM);
     init_array(bounds, m, 2 * DIM);
@@ -686,14 +686,14 @@ int main(int argc, char *argv[])
     init_array(cb1, m, DIM);
     init_array(cb2, m, DIM);
     init_array(l_d, m, DIM);
-    init_array(t, m * 2, DIM);
+    init_array(query, m * 2, DIM);
     init_array(tz, m, DIM);
     init_array(buffer, EPOCH, DIM);
     init_array(l_buff, EPOCH, 2 * DIM);
 
 
     /// Read query file
-    bsf = INF;
+    best_so_far = INF;
     i = 0;
     j = 0;
 
@@ -712,7 +712,7 @@ int main(int argc, char *argv[])
     {
         ex[i % DIM] += d;
         ex2[i % DIM] += d * d;
-        q[i / DIM][i % DIM] = d;
+        search_query[i / DIM][i % DIM] = d;
         i++;
     }
     fclose(qp);
@@ -728,19 +728,19 @@ int main(int argc, char *argv[])
         for (i = 0; i < m; i++)
         {
 
-            q[i][s] = (q[i][s] - ex[s]) / std[s];
+            search_query[i][s] = (search_query[i][s] - ex[s]) / std[s];
         }
     }
 
     /// Create envelop of the query: lower envelop, l, and upper envelop, u
-    lower_upper_lemire(q, m, r, l);
+    lower_upper_lemire(search_query, m, r, l);
 
     /// Sort the query one time by abs(z-norm(q[i]))
     for (i = 0; i < m; i++)
     {
         for (int s = 0; s < DIM; s++)
         {
-            Q_tmp[i].value[s] = q[i][s];
+            Q_tmp[i].value[s] = search_query[i][s];
         }
         Q_tmp[i].index = i;
     }
@@ -755,7 +755,7 @@ int main(int argc, char *argv[])
 
         for (int s = 0; s < DIM; s++)
         {
-            qo[i][s] = q[o][s];
+            qo[i][s] = search_query[o][s];
             bounds[i][2 * s] = l[o][2 * s];
             bounds[i][2 * s + 1] = l[o][2 * s + 1];
         }
@@ -860,11 +860,11 @@ int main(int argc, char *argv[])
                     ex2[s] += d * d;
 
                     /// t is a circular array for keeping current data
-                    t[i % m][s] = d;
+                    query[i % m][s] = d;
 
 
                     /// Double the size for avoiding using modulo "%" operator
-                    t[(i % m) + m][s] = d;
+                    query[(i % m) + m][s] = d;
 
                 }
 
@@ -884,14 +884,14 @@ int main(int argc, char *argv[])
                     I = i - (m - 1);
 
                     /// Use a constant lower bound to prune the obvious subsequence
-                    lb_kim = lb_kim_hierarchy(t, q, j, m, m_ex, std, bsf);
+                    lb_kim = lb_kim_hierarchy(query, search_query, j, m, m_ex, std, best_so_far);
 
-                    if (lb_kim < bsf)
+                    if (lb_kim < best_so_far)
                     {
                         /// Use a linear time lower bound to prune; z_normalization of t will be computed on the fly.
                         /// uo, lo are envelop of the query.
-                            lb_k = lb_keogh_cumulative(order, t, bounds, cb1, j, m, m_ex, std, bsf);
-                        if (lb_k < bsf)
+                            lb_k = lb_keogh_cumulative(order, query, bounds, cb1, j, m, m_ex, std, best_so_far);
+                        if (lb_k < best_so_far)
                         {
                             /// Take another linear time to compute z_normalization of t.
                             /// Note that for better optimization, this can merge to the previous function.
@@ -899,16 +899,16 @@ int main(int argc, char *argv[])
                             {
                                 for (int s = 0; s < DIM; s++)
                                 {
-                                    tz[k][s] = (t[(k + j)][s] - m_ex[s]) / std[s];
+                                    tz[k][s] = (query[(k + j)][s] - m_ex[s]) / std[s];
                                 }
                             }
 
                             /// Use another lb_keogh to prune
                             /// qo is the sorted query. tz is unsorted z_normalized data.
                             /// l_buff, u_buff are big envelop for all data in this chunk
-                            lb_k2 = lb_keogh_data_cumulative(order, tz, qo, cb2, l_buff + I, m, m_ex, std, bsf);
+                            lb_k2 = lb_keogh_data_cumulative(order, tz, qo, cb2, l_buff + I, m, m_ex, std, best_so_far);
 
-                            if (lb_k2 < bsf)
+                            if (lb_k2 < best_so_far)
                             {
                                 /// Choose better lower bound between lb_keogh and lb_keogh2 to be used in early abandoning DTW
                                 /// Note that cb and cb2 will be cumulative summed here.
@@ -941,12 +941,12 @@ int main(int argc, char *argv[])
                                 }
 
                                 /// Compute DTW and early abandoning if possible
-                                dist = dtw(tz, q, cb, m, r, bsf); // todo check performance
+                                dist = dtw(tz, search_query, cb, m, r, best_so_far); // todo check performance
 
-                                if (dist < bsf)
+                                if (dist < best_so_far)
                                 {   /// Update bsf
                                     /// loc is the real starting location of the nearest neighbor in the file
-                                    bsf = dist;
+                                    best_so_far = dist;
                                     loc = (it) * (EPOCH - m + 1) + i - m + 1;
                                 }
                             } else
@@ -959,8 +959,8 @@ int main(int argc, char *argv[])
                     /// Reduce obsolute points from sum and sum square
                     for (int s = 0; s < DIM; s++)
                     {
-                        ex[s] -= t[j][s];
-                        ex2[s] -= t[j][s] * t[j][s];
+                        ex[s] -= query[j][s];
+                        ex2[s] -= query[j][s] * query[j][s];
                     }
                 }
             }
@@ -976,7 +976,7 @@ int main(int argc, char *argv[])
     i = (it) * (EPOCH - m + 1) + ep;
 
 //    free(q);
-    destroy_array(q, m);
+    destroy_array(search_query, m);
     destroy_array(qo, m);
     destroy_array(bounds, m);
     free(order);
@@ -985,7 +985,7 @@ int main(int argc, char *argv[])
     destroy_array(cb1, m);
     destroy_array(cb2, m);
     destroy_array(l_d, m);
-    destroy_array(t, m * 2);
+    destroy_array(query, m * 2);
     destroy_array(tz, m);
     destroy_array(buffer, m);
     destroy_array(l_buff, m);
@@ -1003,7 +1003,7 @@ int main(int argc, char *argv[])
 
     /// Note that loc and i are long long.
     cout << "Location : " << loc << endl;
-    cout << "Distance : " << sqrt(bsf) << endl;
+    cout << "Distance : " << sqrt(best_so_far) << endl;
     cout << "Data Scanned : " << i << endl;
     cout << "Total Execution Time : " << (t2 - t1) / CLOCKS_PER_SEC << " sec" << endl;
 
