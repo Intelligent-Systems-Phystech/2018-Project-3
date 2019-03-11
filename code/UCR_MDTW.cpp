@@ -983,8 +983,7 @@ int main(int argc, char *argv[])
                                     }
                                     else if (dist < best_location_last_added.second )
                                     {
-                                        if (best_locations.size() == closest_series_num)
-                                            best_locations.erase(best_location_last_added.second);
+                                        best_locations.erase(best_location_last_added.second);
                                         best_locations[dist] = current_location;
                                         best_location_last_added.first = current_location;
                                         best_location_last_added.second = dist;
