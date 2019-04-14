@@ -3,3 +3,4 @@ data/distances/dtwnorm_1z_normalizeTruel0.2-43544539162478229291.csv filter=lfs 
 data/distances/dtwnorm_2z_normalizeTruel0.2-43544539162478229291.csv filter=lfs diff=lfs merge=lfs -text
 data/search_subseries/epi_series.csv filter=lfs diff=lfs merge=lfs -text
 data/search_subseries/epi_series_epi_ranges.csv filter=lfs diff=lfs merge=lfs -text
+./data/search_subseries/** filter=lfs diff=lfs merge=lfs -text

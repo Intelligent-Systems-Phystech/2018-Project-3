@@ -34,7 +34,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <time.h>
 #include <cstring>
 #include <iostream>
@@ -42,14 +41,12 @@
 #include <map>
 #include <climits>
 #include <iomanip>
-
-//#define min(x,y) ((x)<(y)?(x):(y))
-//#define max(x,y) ((x)>(y)?(x):(y))
-//#define dist(x,y) ((x-y)*(x-y))
+#include <cmath>
 
 #define INF 1e20       //Pseudo Infitinte number for this code
-
 #define DIM 3
+#define OPTIMIZATION 0
+#define ESTIMATION_ORD 2
 
 using namespace std;
 
@@ -86,12 +83,56 @@ void error(int id)
     exit(1);
 }
 
-double dist(double *x, double *y)
+double one_dim_dist(double x, double y, unsigned short distance_function)
+{
+    switch (distance_function)
+    {
+    case 1:
+        return abs(x - y);
+    case 2:
+        return (x - y) * (x - y);
+    case 3:
+        return 0.0;
+
+    default:
+        cout << "unknowb distance function" << std::endl;
+        return INF;
+    }
+}
+
+double cosine_similarity(double *x, double *y)
+{
+    double mul = 0.0;
+    double d_x = 0.0;
+    double d_y = 0.0 ;
+
+    for(unsigned int i = 0; i < DIM; ++i)
+    {
+        mul += x[i] * y[i];
+        d_x += x[i] * x[i];
+        d_y += y[i] * y[i];
+    }
+
+    if (d_x == 0.0f || d_y == 0.0f)
+    {
+        throw std::logic_error(
+                "cosine similarity is not defined whenever one or both "
+                "input vectors are zero-vectors.");
+    }
+
+    return mul / (sqrt(d_x) * sqrt(d_y)) ;
+}
+
+// Need to use sqrt ??
+double dist(double *x, double *y, unsigned short distance_function)
 {
     double d = 0;
-    for (int i = 0; i < DIM; i++)
+    if (distance_function == 3)
+        return cosine_similarity(x, y);
+
+    for (unsigned int i = 0; i < DIM; i++)
     {
-        d += (x[i] - y[i]) * (x[i] - y[i]);
+        d += one_dim_dist(x[i], y[i], distance_function);
     }
 
     return d;
@@ -100,36 +141,19 @@ double dist(double *x, double *y)
 double *dim_dist(double *x, double *y, double *d)
 {
 
-    for (int i = 0; i < DIM; i++)
+    for (unsigned int i = 0; i < DIM; i++)
     {
-        d[i] = (x[i] - y[i]) * (x[i] - y[i]);
+        d[i] = one_dim_dist(x[i], y[i], ESTIMATION_ORD);
     }
 
     return d;
-}
-
-double dist(double *x, int size)
-{
-    double d = 0;
-    for (int i = 0; i < size; i++)
-    {
-        d += x[i] * x[i];
-    }
-
-    return d;
-}
-
-double dist(double x, double y)
-{
-
-    return (x - y) * (x - y);
 }
 
 double sum(double *x, int size)
 {
     double dd = 0;
 
-    for (int s = 0; s < size; s++)
+    for (unsigned int s = 0; s < size; s++)
     {
         dd += x[s];
     }
@@ -141,7 +165,7 @@ double *min(double *x, double *y)
 {
     double xo = 0;
     double yo = 0;
-    for (int i = 0; i < DIM; i++)
+    for (unsigned int i = 0; i < DIM; i++)
     {
         xo += x[i] * x[i];
         yo += y[i] * y[i];
@@ -155,7 +179,7 @@ double *max(double *x, double *y)
 
     double xo = 0;
     double yo = 0;
-    for (int i = 0; i < DIM; i++)
+    for (unsigned int i = 0; i < DIM; i++)
     {
         xo += x[i] * x[i];
         yo += y[i] * y[i];
@@ -172,7 +196,7 @@ int comp(const void *a, const void *b)
     Index *y = (Index *) b;
     double v_x = 0, v_y = 0;
 
-    for (int i = 0; i < DIM; i++)
+    for (unsigned int i = 0; i < DIM; i++)
     {
         v_x += pow(x->value[i], 2);
         v_y += pow(y->value[i], 2);
@@ -199,13 +223,12 @@ void init(deque *d, int capacity)
 /// Init dynamic array
 void init_array(double **&array, int size, int dim)
 {
-
     array = (double **) calloc(size, sizeof(double *));
 
     if (array == NULL)
         error(1);
 
-    for (int i = 0; i < size; i++)
+    for (unsigned int i = 0; i < size; i++)
     {
         array[i] = (double *) calloc(dim, sizeof(double));
     }
@@ -214,7 +237,7 @@ void init_array(double **&array, int size, int dim)
 /// Free dynamic array
 void destroy_array(double **&array, int size)
 {
-    for (int i = 0; i < size; i++)
+    for (unsigned int i = 0; i < size; i++)
     {
         free(array[i]);
     }
@@ -282,21 +305,20 @@ int empty(struct deque *d)
 /// "Faster Retrieval with a Two-Pass Dynamic-Time-Warping Lower Bound", Pattern Recognition 42(9), 2009.
 void lower_upper_lemire(double **t, int len, int r, double **l)
 {
-
     struct deque *dl;
 
     dl = (deque *) malloc(sizeof(deque) * 2 * DIM);
 
-    for (int d = 0; d < 2 * DIM; d++)
+    for (unsigned int d = 0; d < 2 * DIM; d++)
     {
 
         init(&dl[d], 2 * r + 2);
         push_back(&dl[d], 0);
     }
 
-    for (int i = 1; i < len; i++)
+    for (unsigned int i = 1; i < len; i++)
     {
-        for (int d = 0; d < DIM; d++)
+        for (unsigned int d = 0; d < DIM; d++)
         {
             if (i > r)
             {
@@ -331,9 +353,9 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
         }
     }
 
-    for (int i = len; i < len + r + 1; i++)
+    for (unsigned int i = len; i < len + r + 1; i++)
     {
-        for (int s = 0; s < DIM; s++)
+        for (unsigned int s = 0; s < DIM; s++)
         {
             l[i - r - 1][s * 2] = t[front(&dl[s * 2])][s];
             l[i - r - 1][s * 2 + 1] = t[front(&dl[s * 2 + 1])][s];
@@ -345,7 +367,7 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
 
     }
 
-    for (int s = 0; s < DIM; s++)
+    for (unsigned int s = 0; s < DIM; s++)
     {
         destroy(&dl[s * 2]);
         destroy(&dl[s * 2 + 1]);
@@ -360,11 +382,11 @@ void lower_upper_lemire(double **t, int len, int r, double **l)
 /// However, because of z-normalization the top and bottom cannot give siginifant benefits.
 /// And using the first and last points can be computed in constant time.
 /// The prunning power of LB_Kim is non-trivial, especially when the query is not long, say in length 128.
-double lb_kim_hierarchy(double **t, double **q, int j, int len, double *mean, double *std, double bsf = INF)
+double lb_kim_hierarchy(double **t, double **q, int j, int len, double *mean, double *std,
+                        unsigned short dist_function, double bsf=INF)
 {
     /// 1 point at front and back
     double lb;
-
     double x0[DIM];
     double y0[DIM];
     double x1[DIM];
@@ -376,34 +398,32 @@ double lb_kim_hierarchy(double **t, double **q, int j, int len, double *mean, do
 
     double *d;
 
-    for (int s = 0; s < DIM; s++)
+    for (unsigned int s = 0; s < DIM; s++)
     {
-
         x0[s] = (t[j][s] - mean[s]) / std[s];
         y0[s] = (t[(len - 1 + j)][s] - mean[s]) / std[s];
     }
-
-    lb = dist(x0, q[0]) + dist(y0, q[len - 1]);
+    lb = dist(x0, q[0], dist_function) + dist(y0, q[len - 1], dist_function);
 
     if (lb >= bsf) return lb;
 
     /// 2 points at front
 
-    for (int s = 0; s < DIM; s++)
+    for (unsigned int s = 0; s < DIM; s++)
     {
         x1[s] = (t[(j + 1)][s] - mean[s]) / std[s];
     }
-
 
     d = min(dim_dist(x1, q[0], ddd[0]), dim_dist(x0, q[1], ddd[1]));
     d = min(d, dim_dist(x1, q[1], ddd[2]));
     lb += sum(d, DIM);
 
-    if (lb >= bsf) return lb;
+    if (lb >= bsf)
+        return lb;
 
     /// 2 points at back
 
-    for (int s = 0; s < DIM; s++)
+    for (unsigned int s = 0; s < DIM; s++)
     {
         y1[s] = (t[(len - 2 + j)][s] - mean[s]) / std[s];
     }
@@ -412,11 +432,12 @@ double lb_kim_hierarchy(double **t, double **q, int j, int len, double *mean, do
     d = min(d, dim_dist(y1, q[len - 2], ddd[5]));
     lb += sum(d, DIM);
 
-    if (lb >= bsf) return lb;
+    if (lb >= bsf)
+        return lb;
 
     /// 3 points at front
 
-    for (int s = 0; s < DIM; s++)
+    for (unsigned int s = 0; s < DIM; s++)
     {
         x2[s] = (t[(j + 2)][s] - mean[s]) / std[s];
     }
@@ -427,11 +448,12 @@ double lb_kim_hierarchy(double **t, double **q, int j, int len, double *mean, do
     d = min(d, dim_dist(x2, q[0], ddd[10]));
     lb += sum(d, DIM);
 
-    if (lb >= bsf) return lb;
+    if (lb >= bsf)
+        return lb;
 
     /// 3 points at back
 
-    for (int s = 0; s < DIM; s++)
+    for (unsigned int s = 0; s < DIM; s++)
     {
         y2[s] = (t[(len - 3 + j)][s] - mean[s]) / std[s];
     }
@@ -454,38 +476,27 @@ double lb_kim_hierarchy(double **t, double **q, int j, int len, double *mean, do
 /// t     : a circular array keeping the current data.
 /// j     : index of the starting location in t
 /// cb    : (output) current bound at each position. It will be used later for early abandoning in DTW.
-double
-lb_keogh_cumulative(int *order, double **t, double **bounds, double **cb, int j, int len, double *mean, double *std,
-                    double best_so_far = INF)
-//double lb_keogh_cumulative(int* order, double *t, double *uo, double *lo, double *cb, int j, int len, double mean, double std, double best_so_far = INF)
+double lb_keogh_cumulative(int *order, double **t, double **bounds, double **cb, int j,
+                           int len, double *mean, double *std, unsigned short dist_function,
+                           double best_so_far=INF)
 {
     double lb = 0;
     double x, d;
 
-    for (int i = 0; i < len && lb < best_so_far; i++)
+    for (unsigned int i = 0; i < len && lb < best_so_far; i++)
     {
-        for (int s = 0; s < DIM; s++)
+        for (unsigned int s = 0; s < DIM; s++)
         {
             x = (t[(order[i] + j)][s] - mean[s]) / std[s];
             d = 0;
 
             if (x > bounds[i][s * 2])
             {
-                d = dist(x, bounds[i][s * 2]);
+                d = one_dim_dist(x, bounds[i][s * 2], dist_function);
             } else if (x < bounds[i][s * 2 + 1])
             {
-                d = dist(x, bounds[i][2 * s + 1]);
+                d = one_dim_dist(x, bounds[i][2 * s + 1], dist_function);
             }
-
-//            if (s == 0)
-//            {
-////                cout << "d = " << d << endl;
-////                cout << "s = " << s << endl;
-//                cout << "x = " << x << endl;
-//                cout << "x = " << x << endl;
-////                cout << "u_bounds = " << bounds[i][0] << endl;
-////                cout << "l_bounds = " << bounds[i][1] << endl;
-//            }
 
             lb += d;
             cb[order[i]][s] = d;
@@ -504,24 +515,24 @@ lb_keogh_cumulative(int *order, double **t, double **bounds, double **cb, int j,
 /// cb: (output) current bound at each position. Used later for early abandoning in DTW.
 /// l,u: lower and upper envelop of the current data
 double lb_keogh_data_cumulative(int *order, double **tz, double **qo, double **cb, double **l, int len, double *mean,
-                                double *std, double best_so_far = INF)
+                                double *std, unsigned short dist_function, double best_so_far = INF)
 {
     double lb = 0;
     double ll[DIM * 2], d;
 
-    for (int i = 0; i < len && lb < best_so_far; i++)
+    for (unsigned int i = 0; i < len && lb < best_so_far; i++)
     {
-        for (int s = 0; s < DIM; s++)
+        for (unsigned int s = 0; s < DIM; s++)
         {
             ll[s * 2] = (l[order[i]][s * 2] - mean[s]) / std[s];
             ll[s * 2 + 1] = (l[order[i]][s * 2 + 1] - mean[s]) / std[s];
 
             d = 0;
             if (qo[i][s] > ll[s * 2])
-                d = dist(qo[i][s], ll[s * 2]);
+                d = one_dim_dist(qo[i][s], ll[s * 2], dist_function);
             else if (qo[i][s] < ll[s * 2 + 1])
             {
-                d = dist(qo[i][s], ll[s * 2 + 1]);
+                d = one_dim_dist(qo[i][s], ll[s * 2 + 1], dist_function);
             }
 
             lb += d;
@@ -539,9 +550,9 @@ double lb_keogh_data_cumulative(int *order, double **tz, double **qo, double **c
 /// Print function for debugging
 void print(double **x, int len)
 {
-    for (int i = 0; i < len; i++)
+    for (unsigned int i = 0; i < len; i++)
     {
-        for (int j = 0; j < DIM; j++)
+        for (unsigned int j = 0; j < DIM; j++)
         {
             cout << " " << x[i][j];
         }
@@ -557,7 +568,8 @@ void print(double **x, int len)
 /// A,B: data and query, respectively
 /// cb : cummulative bound used for early abandoning
 /// r  : size of Sakoe-Chiba warpping band
-double dtw(double **A, double **B, double **cb, int m, int r, double bsf = INF)
+double dtw(double **A, double **B, double **cb, int m, int r,
+           unsigned short dist_function, double bsf=INF)
 {
 
     double *cost;
@@ -585,7 +597,7 @@ double dtw(double **A, double **B, double **cb, int m, int r, double bsf = INF)
             if ((i == 0) && (j == 0))
             {
 
-                cost[k] = dist(A[0], B[0]); // todo metrics
+                cost[k] = dist(A[0], B[0], dist_function); // todo metrics
                 min_cost = cost[k];
                 continue;
             }
@@ -598,7 +610,7 @@ double dtw(double **A, double **B, double **cb, int m, int r, double bsf = INF)
             else z = cost_prev[k];
 
             /// Classic DTW calculation
-            cost[k] = min(min(x, y), z) + dist(A[i], B[j]); // todo metrics
+            cost[k] = min(min(x, y), z) + dist(A[i], B[j], dist_function); // todo metrics
 
             /// Find minimum cost in row for early abandoning (possibly to use column instead of row).
             if (cost[k] < min_cost)
@@ -608,7 +620,7 @@ double dtw(double **A, double **B, double **cb, int m, int r, double bsf = INF)
         }
 
         /// We can abandon early if the current cummulative distace with lower bound together are larger than bsf
-        if (i + r < m - 1 && min_cost + sum(cb[i + r + 1], DIM) >= bsf)
+        if ((OPTIMIZATION == 1) && i + r < m - 1 && min_cost + sum(cb[i + r + 1], DIM) >= bsf)
         {
             free(cost);
             free(cost_prev);
@@ -648,6 +660,12 @@ int main(int argc, char *argv[])
     int warp_window = -1;
     unsigned int closest_series_num = 1;
 
+    // corresponds to choosing internal distance function
+    // 1: L_1 metric
+    // 2: L_2 metric
+    // 3: cosine similarity
+    unsigned int distance_function = 2;
+
     long long current_location = 0;
     double t1, t2;
     int kim = 0, keogh = 0, keogh2 = 0;
@@ -658,7 +676,8 @@ int main(int argc, char *argv[])
     auto best_locations = map<double, long long, std::greater<double>> ();
     auto best_location_last_added = std::pair<long long, double> (LLONG_MIN, -1.0);
 
-    /// For every EPOCH points, all cummulative values, such as ex (sum), ex2 (sum square), will be restarted for reducing the floating point error.
+    /// For every EPOCH points, all cummulative values, such as ex (sum), ex2 (sum square), will be restarted for
+    /// reducing the floating point error.
     int EPOCH = 100000;
 
     /// If not enough input, display an error.
@@ -680,9 +699,10 @@ int main(int argc, char *argv[])
     }
 
     if (argc > 5)
-    {
         closest_series_num = static_cast<unsigned int>(atol(argv[5]));
-    }
+    
+    if (argc > 6)    
+        distance_function = static_cast<unsigned int>(atol(argv[6]));
 
     fp = fopen(argv[1], "r");
     if (fp == NULL)
@@ -743,9 +763,8 @@ int main(int argc, char *argv[])
     fclose(qp);
 
     /// Do z-normalize the query, keep in same array, q
-    for (int s = 0; s < DIM; s++)
+    for (unsigned int s = 0; s < DIM; s++)
     {
-
         ex[s] = ex[s] / query_len;
         ex2[s] = ex2[s] / query_len;
         std[s] = sqrt(ex2[s] - ex[s] * ex[s]);
@@ -762,7 +781,7 @@ int main(int argc, char *argv[])
     /// Sort the query one time by abs(z-norm(q[i]))
     for (i = 0; i < query_len; i++)
     {
-        for (int s = 0; s < DIM; s++)
+        for (unsigned int s = 0; s < DIM; s++)
         {
             Q_tmp[i].value[s] = search_query[i][s];
         }
@@ -773,11 +792,10 @@ int main(int argc, char *argv[])
     /// also create another arrays for keeping sorted envelop
     for (i = 0; i < query_len; i++)
     {
-
         int o = Q_tmp[i].index;
         order[i] = o;
 
-        for (int s = 0; s < DIM; s++)
+        for (unsigned int s = 0; s < DIM; s++)
         {
             qo[i][s] = search_query[o][s];
             bounds[i][2 * s] = l[o][2 * s];
@@ -785,13 +803,6 @@ int main(int argc, char *argv[])
         }
     }
     free(Q_tmp);
-
-    /// Initial the cummulative lower bound
-//    for( i=0; i<query_len; i++) // todo calloc???
-//    {   cb[i]=0;
-//        cb1[i]=0;
-//        cb2[i]=0;
-//    }
 
     /// current index of the data in current chunk of size EPOCH
     /// the starting index of the data in the circular array, t
@@ -802,14 +813,12 @@ int main(int argc, char *argv[])
 
     bool done = false;
     int it = 0, ep = 0, k = 0;
-    long long I;    /// the starting index of the data in current chunk of size EPOCH
-
     int b = 0;
+    long long I;    /// the starting index of the data in current chunk of size EPOCH
 
     while (!done)
     {
         /// Read first m-1 points
-        ep = 0;
         if (it == 0)
         {
             for (k = 0; k < (query_len - 1) * DIM; k++)
@@ -834,7 +843,7 @@ int main(int argc, char *argv[])
 
         while (ep < EPOCH)
         {
-            for (int s = 0; s < DIM; s++)
+            for (unsigned int s = 0; s < DIM; s++)
             {
                 if (fscanf(fp, "%lf", &d) == EOF)
                 {
@@ -851,20 +860,17 @@ int main(int argc, char *argv[])
         /// When there is nothing to read, the loop is end.
         if (ep <= (query_len - 1))
         {
-
             done = true;
         } else
         {
-
             lower_upper_lemire(buffer, ep, warp_window, l_buff);
-
 
             /// Just for printing a dot for approximate a million point. Not much accurate.
             if (it % (1000000 / (EPOCH - query_len + 1)) == 0)
                 fprintf(stderr, ".");
 
             /// Do main task here..
-            for (int s = 0; s < DIM; s++)
+            for (unsigned int s = 0; s < DIM; s++)
             {
                 ex[s] = 0;
                 ex2[s] = 0;
@@ -874,7 +880,7 @@ int main(int argc, char *argv[])
             for (i = 0; i < ep; i++)
             {
 
-                for (int s = 0; s < DIM; s++)
+                for (unsigned int s = 0; s < DIM; s++)
                 {
                     /// A bunch of data has been read and pick one of them at a time to use
                     d = buffer[i][s];
@@ -895,7 +901,7 @@ int main(int argc, char *argv[])
                 /// Start the task when there are more than m-1 points in the current chunk
                 if (i >= query_len - 1)
                 {
-                    for (int s = 0; s < DIM; s++)
+                    for (unsigned int s = 0; s < DIM; s++)
                     {
                         m_ex[s] = ex[s] / query_len;
                         m_ex2[s] = ex2[s] / query_len;
@@ -907,99 +913,141 @@ int main(int argc, char *argv[])
                     /// the start location of the data in the current chunk
                     I = i - (query_len - 1);
 
-                    /// Use a constant lower bound to prune the obvious subsequence
-                    lb_kim = lb_kim_hierarchy(query, search_query, j, query_len, m_ex, std, best_in_choosed);
-
-                    if (lb_kim < best_in_choosed)
+                    if (OPTIMIZATION == 0)
                     {
-                        /// Use a linear time lower bound to prune; z_normalization of t will be computed on the fly.
-                        /// uo, lo are envelop of the query.
-                        lb_k = lb_keogh_cumulative(order, query, bounds, cb1, j, query_len, m_ex, std, best_in_choosed);
-                        if (lb_k < best_in_choosed)
+                        for (k = 0; k < query_len; k++)
                         {
-                            /// Take another linear time to compute z_normalization of t.
-                            /// Note that for better optimization, this can merge to the previous function.
-                            for (k = 0; k < query_len; k++)
+                            for (unsigned int s = 0; s < DIM; s++)
                             {
-                                for (int s = 0; s < DIM; s++)
-                                {
-                                    tz[k][s] = (query[(k + j)][s] - m_ex[s]) / std[s];
-                                }
+                                tz[k][s] = (query[(k + j)][s] - m_ex[s]) / std[s];
+                            }
+                        }
+
+                        dist = dtw(tz, search_query, cb, query_len, warp_window, distance_function,
+                            best_in_choosed);
+
+                        if (best_locations.begin()->first > dist or best_locations.size() < closest_series_num)
+                        {
+                            current_location = (it) * (EPOCH - query_len + 1) + i - query_len + 1;
+
+                            if (best_location_last_added.first <= current_location - query_len)
+                            {
+                                if (best_locations.size() == closest_series_num)
+                                    best_locations.erase(best_locations.begin()->first);
+                                best_locations[dist] = current_location;
+                                best_location_last_added.first = current_location;
+                                best_location_last_added.second = dist;
+                            }
+                            else if (dist < best_location_last_added.second )
+                            {
+                                best_locations.erase(best_location_last_added.second);
+                                best_locations[dist] = current_location;
+                                best_location_last_added.first = current_location;
+                                best_location_last_added.second = dist;
                             }
 
-                            /// Use another lb_keogh to prune
-                            /// qo is the sorted query. tz is unsorted z_normalized data.
-                            /// l_buff, u_buff are big envelop for all data in this chunk
-                            lb_k2 = lb_keogh_data_cumulative(order, tz, qo, cb2, l_buff + I, query_len, m_ex, std,
-                                                             best_in_choosed);
+                            best_in_choosed = best_locations.begin()->first;
+                        }
+                    } else
+                    {
+                        lb_kim = lb_kim_hierarchy(query, search_query, j, query_len, m_ex, std,
+                            distance_function, best_in_choosed);
 
-                            if (lb_k2 < best_in_choosed)
+                        if (lb_kim < best_in_choosed)
+                        {
+                            /// Use a linear time lower bound to prune; z_normalization of t will be computed on the fly.
+                            /// uo, lo are envelop of the query.
+                            lb_k = lb_keogh_cumulative(order, query, bounds, cb1, j, query_len, m_ex, std,
+                                distance_function, best_in_choosed);
+                            if (lb_k < best_in_choosed)
                             {
-                                /// Choose better lower bound between lb_keogh and lb_keogh2 to be used in early abandoning DTW
-                                /// Note that cb and cb2 will be cumulative summed here.
-                                if (lb_k > lb_k2)
+                                /// Take another linear time to compute z_normalization of t.
+                                /// Note that for better optimization, this can merge to the previous function.
+                                for (k = 0; k < query_len; k++)
                                 {
-                                    for (int s = 0; s < DIM; s++)
+                                    for (unsigned int s = 0; s < DIM; s++)
                                     {
-                                        cb[query_len - 1][s] = cb1[query_len - 1][s];
+                                        tz[k][s] = (query[(k + j)][s] - m_ex[s]) / std[s];
                                     }
-                                    for (k = query_len - 2; k >= 0; k--)
+                                }
+
+                                /// Use another lb_keogh to prune
+                                /// qo is the sorted query. tz is unsorted z_normalized data.
+                                /// l_buff, u_buff are big envelop for all data in this chunk
+                                lb_k2 = lb_keogh_data_cumulative(order, tz, qo, cb2, l_buff + I, query_len, m_ex, std,
+                                    distance_function, best_in_choosed);
+
+                                if (lb_k2 < best_in_choosed)
+                                {
+                                    /// Choose better lower bound between lb_keogh and lb_keogh2 to be used in early abandoning DTW
+                                    /// Note that cb and cb2 will be cumulative summed here.
+                                    if (lb_k > lb_k2)
                                     {
-                                        for (int s = 0; s < DIM; s++)
+                                        for (unsigned int s = 0; s < DIM; s++)
                                         {
-                                            cb[k][s] = cb[k + 1][s] + cb1[k][s];
+                                            cb[query_len - 1][s] = cb1[query_len - 1][s];
                                         }
+                                        for (k = query_len - 2; k >= 0; k--)
+                                        {
+                                            for (unsigned int s = 0; s < DIM; s++)
+                                            {
+                                                cb[k][s] = cb[k + 1][s] + cb1[k][s];
+                                            }
+                                        }
+                                    } else
+                                    {
+                                        for (unsigned int s = 0; s < DIM; s++)
+                                        {
+                                            cb[query_len - 1][s] = cb2[query_len - 1][s];
+                                        }
+                                        for (k = query_len - 2; k >= 0; k--)
+                                        {
+                                            for (unsigned int s = 0; s < DIM; s++)
+                                            {
+                                                cb[k][s] = cb[k + 1][s] + cb2[k][s];
+                                            }
+                                        }
+                                    }
+
+                                    /// Compute DTW and early abandoning if possible
+                                    // todo check performance
+                                    dist = dtw(tz, search_query, cb, query_len, warp_window, distance_function,
+                                        best_in_choosed);
+
+                                    if (best_locations.begin()->first > dist or best_locations.size() < closest_series_num)
+                                    {
+                                        current_location = (it) * (EPOCH - query_len + 1) + i - query_len + 1;
+
+                                        if (best_location_last_added.first <= current_location - query_len)
+                                        {
+                                            if (best_locations.size() == closest_series_num)
+                                                best_locations.erase(best_locations.begin()->first);
+                                            best_locations[dist] = current_location;
+                                            best_location_last_added.first = current_location;
+                                            best_location_last_added.second = dist;
+                                        }
+                                        else if (dist < best_location_last_added.second)
+                                        {
+                                            best_locations.erase(best_location_last_added.second);
+                                            best_locations[dist] = current_location;
+                                            best_location_last_added.first = current_location;
+                                            best_location_last_added.second = dist;
+                                        }
+
+                                        best_in_choosed = best_locations.begin()->first;
                                     }
                                 } else
-                                {
-                                    for (int s = 0; s < DIM; s++)
-                                    {
-                                        cb[query_len - 1][s] = cb2[query_len - 1][s];
-                                    }
-                                    for (k = query_len - 2; k >= 0; k--)
-                                    {
-                                        for (int s = 0; s < DIM; s++)
-                                        {
-                                            cb[k][s] = cb[k + 1][s] + cb2[k][s];
-                                        }
-                                    }
-                                }
-
-                                /// Compute DTW and early abandoning if possible
-                                // todo check performance
-                                dist = dtw(tz, search_query, cb, query_len, warp_window, best_in_choosed);
-
-                                if (best_locations.begin()->first > dist or best_locations.size() < closest_series_num)
-                                {
-                                    current_location = (it) * (EPOCH - query_len + 1) + i - query_len + 1;
-
-                                    if (best_location_last_added.first <= current_location - query_len)
-                                    {
-                                        if (best_locations.size() == closest_series_num)
-                                            best_locations.erase(best_locations.begin()->first);
-                                        best_locations[dist] = current_location;
-                                        best_location_last_added.first = current_location;
-                                        best_location_last_added.second = dist;
-                                    }
-                                    else if (dist < best_location_last_added.second )
-                                    {
-                                        best_locations.erase(best_location_last_added.second);
-                                        best_locations[dist] = current_location;
-                                        best_location_last_added.first = current_location;
-                                        best_location_last_added.second = dist;
-                                    }
-
-                                    best_in_choosed = best_locations.begin()->first;
-                                }
+                                    keogh2++;
                             } else
-                                keogh2++;
+                                keogh++;
                         } else
-                            keogh++;
-                    } else
-                        kim++;
+                            kim++;
+                    }
+                            /// Use a constant lower bound to prune the obvious subsequence
+
 
                     /// Reduce obsolute points from sum and sum square
-                    for (int s = 0; s < DIM; s++)
+                    for (unsigned int s = 0; s < DIM; s++)
                     {
                         ex[s] -= query[j][s];
                         ex2[s] -= query[j][s] * query[j][s];
@@ -1048,7 +1096,7 @@ int main(int argc, char *argv[])
 
     /// Note that loc and i are long long.
     cout << "Location : " << best_locations.rbegin()->second << endl;
-    cout << "Distance : " << sqrt(best_locations.rbegin()->first) << endl;
+    cout << "Distance : " << best_locations.rbegin()->first << endl;
     cout << "Data Scanned : " << i << endl;
     cout << "Total Execution Time : " << (t2 - t1) / CLOCKS_PER_SEC << " sec" << endl;
 
