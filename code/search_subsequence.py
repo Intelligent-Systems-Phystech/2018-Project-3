@@ -18,8 +18,8 @@ OUPUT_BASE_REGEXP = \
 
 OUPUT_STARTS_REGEXP = r"(\d+)\s+(\d+\.\d+)\r\n"
 
-BIN_EXE = r"bin/UCR_MDTW.exe"
-BIN_EXE_NO_OPTIM = r"bin/UCR_MDTW_no_optim.exe"
+BIN_EXE = r"ucr_mdtw/bin/UCR_MDTW.exe"
+BIN_EXE_NO_OPTIM = r"ucr_mdtw/bin/UCR_MDTW_no_optim.exe"
 MAX_DIST = 1e20
 
 
