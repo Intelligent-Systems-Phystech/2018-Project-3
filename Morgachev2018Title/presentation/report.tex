@@ -33,6 +33,7 @@
 \usepackage{color}
 \usepackage{tikz}
 \usepackage{booktabs}
+\usepackage{multirow}
 
 \usetikzlibrary{automata,positioning}
 \usetikzlibrary{shadows}
@@ -56,6 +57,8 @@
     tabsize=2,
 }
 
+\DeclareMathOperator*{\argmax}{argmax} 
+
 \AtBeginSection[]{
     \begin{frame}
     \vfill
@@ -74,6 +77,8 @@
 \title[DTW]{Динамическое выравнивание многомерных временных рядов}
 
 \author{Моргачев Г., Смирнов В., Липницкая Т., \\ Руководитель: Гончаров А.}
+
+\institute{Moscow Institute of Physics and Technology}
 \date{\today}
 
 \begin{document}
@@ -87,8 +92,82 @@
 %------------------------------------------------
 
 \begin{frame}
+\frametitle{Цели исследования}
+    \begin{block}{Цель работы}
+        Исследовать влияния выбора внутренней функции расстояния на 
+        работу алгоритма DTW.
+    \end{block}
+    \begin{block}{Проблема}
+        При обобщении выравнивания временных рядов на многомерный случай остается 
+        открытым вопрос опредления расстояния между парами векторов.
+    \end{block}
+    \begin{block}{Метод решения}
+        Получение оптимальной функции расстояния путем проведения эксперимента на 
+        задачах поиска паттернов и кластеризации
+    \end{block}
+\end{frame}
+    
+%------------------------------------------------
+
+\begin{frame}
+\frametitle{Постановка задачи}
+    \begin{block}{}
+        Есть множество временных рядов $\mathbb{S} \subset \mathbb{R}^{l \times n}$,
+         где $l$ \-- количество каналов,\\ $n$ \-- длина ряда. \\
+        Задано множество функций расстояния между векторами
+        $$\mathrm{R} = \{\rho: \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}^+ \}$$
+        $$
+            DTW_{\rho}: \mathbb{S} \times \mathbb{S} \rightarrow \mathbb{R}^+ 
+        $$
+    \end{block}
+    \begin{block}{Кластеризация}
+
+        $\forall s_i \in S \subset \mathbb{S}$ задано ${y_i \in \mathbb{Y}}$ \-- множество меток классов.
+        Матрица попарных расстояний:
+        $$
+            D(DTW_\rho(S)) = ||D_{ij}||, \ \ D_{ij} = DTW_\rho(s_i, s_j),\ \ s_i, s_j \in S 
+        $$
+        Кластеризатор: $f: D \rightarrow Z^N, \ \text{Z \-- множество меток кластеров}$
+
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \begin{block}{Функции качества кластеризации}
+    \begin{align*}
+        Q_1(f(D), S) &= \frac{1}{|Z|}\sum\limits_{z \in Z} \max_y \frac{N_z^y}{N_z}  \\
+        Q_2(f(D), S) &= \frac{1}{|Z|}\sum\limits_{z \in Z} \max_y \frac{(N_z^y)^2}{N_z N^y}
+    \end{align*}
+    \end{block}
+
+    \begin{block}{Поиск паттернов}
+        Задан временной ряд $\mathcal{A}$ длинны $n$, содержащий подряды класса $P$. \\
+        $P$ \-- временные ряда длины $m \ll n$. \\
+        Известны представители класса $P$, необходимо найти участки $\mathcal{A}$,
+            соответствующие данному классу. \\
+        $T = \{t_1, \dots, t_j \}$ \-- множество начал таких событий. \\
+        Участок найден, если пересечение с предполагаемым более $80\%$ от $m$.
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    \begin{block}{Функции качества поиска шаблонов}
+        \begin{align*}
+            Q(DTW_{\rho}, A, P_k, T) = \dfrac{\sum\limits_{i=1}^j [t_i \-- \text{найден}]}{j}
+        \end{align*}
+    \end{block}
+
+    \begin{block}{Общая постановка задачи}
+        $$
+            \rho_i = \argmax_{\rho} Q_i(\rho)
+        $$
+    \end{block}
+\end{frame}
+    
+%------------------------------------------------
+\begin{frame}
 \frametitle{Сравнение рядов}
-	\begin{block}{Проблемы}
+    \begin{block}{Проблемы}
         \begin{itemize}
             \item Растяжение
             \item Сдвиги
@@ -114,7 +193,8 @@
         \includegraphics[width=0.6\linewidth]{1}
     \end{figure}
 \end{frame}
-    
+
+
 %------------------------------------------------
 
 \begin{frame}
@@ -127,62 +207,7 @@
         Зависимость качества кластеризации временных рядов от выбора функции расстояния между ними
     \end{block}
 \end{frame}
-    
-%------------------------------------------------
-
-\begin{frame}
-\frametitle{Задача}
-    \begin{block}{}
-        Множество временных рядов
-        $\mathbb{S} \subset \mathbb{R}^{l \times n}$, где $l$ \-- количество каналов,\\ $n$ \-- длина ряда.
-
-        $\forall s_i \in \mathbb{S}$ задано ${y_i \in \mathbb{Y}}$ \-- множество меток классов.
-
-        Функции расстояния между векторами $\mathrm{R}$:
-        $$
-            \mathrm{R} = \{\rho: \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}^+ \}
-        $$
-
-        Соответствующие \textbf{DTW}
-        $$
-            g_{\rho}: \mathbb{S} \times \mathbb{S} \rightarrow \mathbb{R}^+ 
-        $$
-    \end{block}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Задача}
-    \begin{block}{}
-        Пусть $ S \subset \mathbb{S}, \ \ |S| = N$ \-- выборка
-
-        Матрица попарных расстояний:
-        $$
-            D(g_\rho(S)) = ||D_{ij}||, \ \ D_{ij} = g_\rho(s_i, s_j),\ \ s_i, s_j \in S 
-        $$
-        Кластеризатор:
-        $$
-            f: D \rightarrow Z^N, \ \text{Z \-- множество меток кластеров}
-        $$
-
-    \end{block}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Задача}
-    \begin{block}{Функции качества}
-    \begin{align*}
-        Q_1(f(D), S) &= \frac{1}{|Z|}\sum\limits_{z \in Z} \max_y \frac{N_z^y}{N_z}  \\
-        Q_2(f(D), S) &= \frac{1}{|Z|}\sum\limits_{z \in Z} \max_y \frac{(N_z^y)^2}{N_z N^y}
-    \end{align*}
-    \end{block}
-
-    \begin{block}{Постановка задачи}
-        $$
-            Q_i(D(g_\rho(S), S) \rightarrow \max_{\rho}
-        $$
-    \end{block}
-\end{frame}
-    
+        
 %------------------------------------------------
 
 \begin{frame}
@@ -199,14 +224,17 @@
  
 \begin{frame}
     \frametitle{Эксперимент}   
-    \begin{block}{Данные}
-        Размеченные данные ускорений акселерометра телефона
+    \begin{block}{Данные: класстеризация}
         \begin{itemize}
-            \item 6 состояния человека
-            \item 3 канала
-            \item Разбиты на ряды по 50 точек
-            \item Размер выборки - 2048
-            \item Производится нормализация данных
+            \item Размеченные данные ускорений акселерометра телефона: из 6 состояния человека,
+                3 канала, разбит по 50 точек.
+        \end{itemize}
+    \end{block}
+
+    \begin{block}{Данные: поиск паттернов}
+        \begin{itemize}
+            \item Данные ECG: 4 состояния человека, 3 канала, разбиты на ряды по 206 точек
+            \item Написание букв: 20 символов, 3 канала, разбиты по 182 точки 
         \end{itemize}
     \end{block}
 \end{frame}
@@ -214,25 +242,59 @@
 %------------------------------------------------
 
 \begin{frame}
-    \frametitle{Результаты}   
+    \frametitle{Результаты: поиск паттернов}   
     \begin{center}
         \begin{table}
-        \begin{tabular}{ll|rrr|rrr}  
-            \toprule
-            & & \multicolumn{3}{c|}{$Q_1$} & \multicolumn{3}{c}{$Q_2$} \\
-            \cmidrule(r){3-8}
-        $\rho$ & n & \textit{compl} & \textit{aver} & \textit{weigh} & \textit{compl} & \textit{aver} & \textit{weight} \\
-            \midrule
-        $L_1$   & 24    &   0.5059  &   0.5854 &    0.6384  & 0.2732   &  0.3761    &   0.4488  \\
-                & 36    &   0.5325  &   0.6196 &    0.6163  & 0.2988   &  0.4246    &   0.4140  \\
-                & 48    &   0.5563  &   0.6388 &    0.6308  & 0.3303   &  0.4432    &   0.4306  \\
-        $L_2$   & 24    &   0.4876  &   0.6216 &    0.6258  & 0.2701   &  0.4173    &   0.4246  \\
-                & 36    &   0.4982  &   0.6459 &    0.6433  & 0.2701   &  0.4545    &   0.4489  \\
-                & 48    &   0.5336  &   0.6486 &    0.6530  & 0.2701   &  0.4546    &   0.4615  \\
-        \bottomrule
-        \end{tabular}
+            \begin{tabular}{c|c *{2}{|*{3}{c}}}  
+                \toprule
+                  \multirow{2}{*}{$\rho$}& \multirow{2}{*}{average} & 
+                            \multicolumn{3}{c|}{characters} & \multicolumn{3}{c}{epi} \\
+                \cmidrule(r){3-8}
+                                   &  & $Q$ & $t$ & $t_{\text{no optim}}$ & $Q$ & $t$ & $t_{\text{no optim}}$ \\
+                \midrule
+            \multirow{2}{*}{$L_1$} 
+                    & DBA    &   0.857   &   2.123   &    11.767   &   0.744   &   14.335   &    13.064\\
+                    & mean   &   0.894   &   2.361   &    11.614   &   0.744   &   13.541   &    13.912\\
+            \midrule        
+            \multirow{2}{*}{$L_2$} 
+                    & DBA    &   0.818   &   1.551   &    11.499   &   0.687   &   12.342   &    13.205\\
+                    & mean   &   0.854   &   1.527   &    10.164   &   0.687   &   14.199   &    12.738\\
+            \midrule        
+            \multirow{2}{*}{ED}
+                    & DBA    &   0.08   &   17.511   &    17.511   &   0.172  &   1.620   &    1.620   \\
+                    & mean   &   0.09   &   17.645   &    17.645   &    0.172  &   1.540   &    1.540    \\
+            \bottomrule
+            \end{tabular}
         \end{table}
     \end{center}
+\end{frame}
+
+
+%------------------------------------------------
+
+\begin{frame}
+    \frametitle{Результаты: кластеризация}   
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{c|c *{2}{|*{3}{c}}}
+            \toprule
+            \multirow{2}{*}{$\rho$} & \multirow{2}{*}{$N_{clust}$} & \multicolumn{3}{c|}{$Q_1$} & \multicolumn{3}{c}{$Q_2$} \\
+            \cmidrule(r){3-8}
+            && \textit{compl.} & \textit{aver.} & \textit{weight.} & \textit{compl.} & \textit{aver.} & \textit{weight.} \\
+            \midrule
+        \multirow{3}{*}{$L_1$}
+                & 24    &   0.506  &   0.585 &    0.638  & 0.273   &  0.376    &   0.449  \\
+                & 36    &   0.533  &   0.620 &    0.616  & 0.299   &  0.425    &   0.414  \\
+                & 48    &   0.556  &   0.639 &    0.631  & 0.330   &  0.443    &   0.431  \\
+        \midrule
+        \multirow{3}{*}{$L_2$}
+                & 24    &   0.488  &   0.622 &    0.626  & 0.270   &  0.417    &   0.425  \\
+                & 36    &   0.498  &   0.646 &    0.643  & 0.270   &  0.455    &   0.449  \\
+                & 48    &   0.534  &   0.648 &    0.653  & 0.270   &  0.455    &   0.462  \\
+        \bottomrule
+        \end{tabular}
+    \end{table}
+
 \end{frame}
 
 %------------------------------------------------
@@ -240,8 +302,7 @@
 \begin{frame}
     \frametitle{Результаты}
     \begin{block}{Выводы}
-        Лучшие результаты в случае выбора функции расстояния, порожденной $L_2$ нормой.
-        Требуется продолжение исследования.
+        
     \end{block}
 \end{frame}
     
