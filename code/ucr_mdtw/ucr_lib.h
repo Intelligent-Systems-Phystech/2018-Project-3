@@ -23,7 +23,7 @@ struct deque
 void error(int id);
 
 double one_dim_dist(double x, double y, unsigned short distance_function);
-double cosine_similarity(double *x, double *y);
+double cosine_dist(double *x, double *y);
 double dist(double *x, double *y, unsigned short distance_function);
 double *dim_dist(double *x, double *y, double *d);
 

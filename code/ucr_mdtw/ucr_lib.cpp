@@ -82,7 +82,7 @@ double one_dim_dist(double x, double y, unsigned short distance_function)
     }
 }
 
-double cosine_similarity(double *x, double *y)
+double cosine_dist(double *x, double *y)
 {
     double mul = 0.0;
     double d_x = 0.0;
@@ -96,13 +96,9 @@ double cosine_similarity(double *x, double *y)
     }
 
     if (d_x == 0.0f || d_y == 0.0f)
-    {
-        throw std::logic_error(
-                "cosine similarity is not defined whenever one or both "
-                "input vectors are zero-vectors.");
-    }
+        return 1;
 
-    return mul / (sqrt(d_x) * sqrt(d_y)) ;
+    return 1 - abs(mul) / (sqrt(d_x) * sqrt(d_y));
 }
 
 // Need to use sqrt ??
@@ -110,7 +106,7 @@ double dist(double *x, double *y, unsigned short distance_function)
 {
     double d = 0;
     if (distance_function == 3)
-        return cosine_similarity(x, y);
+        return cosine_dist(x, y);
 
     for (unsigned int i = 0; i < DIM; i++)
     {
