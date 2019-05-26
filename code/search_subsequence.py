@@ -37,12 +37,12 @@ def generate_sample(data: np.array, labels: np.array, n_samples: int, path: str,
     random_state = np.random.RandomState(random_state)
     idxs = np.arange(data.shape[0])
     possible_labels = np.unique(labels)
-    dataset_idxs = resample(idxs, n_samples=200, random_state=random_state)
+    dataset_idxs = resample(idxs, n_samples=n_samples, random_state=random_state)
     train_samples = []
     test_samples = []
 
     for label in possible_labels:
-        train, test = train_test_split(dataset_idxs[labels[dataset_idxs] == label], test_size=0.2)
+        train, test = train_test_split(dataset_idxs[labels[dataset_idxs] == label], test_size=0.8)
         test_samples.extend(test)
         train_samples.append(list(map(normalize, train)))
 
