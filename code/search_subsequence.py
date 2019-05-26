@@ -1,9 +1,17 @@
 import re
+import os
 import subprocess
 import numpy as np
+import pandas as pd
 
 from time import time
 from sortedcontainers import SortedDict
+from typing import Optional
+from scipy.stats import zscore
+from sklearn.utils import resample
+from sklearn.model_selection import train_test_split
+from DBA_multivariate import performDBA
+
 
 OUPUT_BASE_REGEXP = \
     r"\r\nLocation\s+:\s+(?P<location>\w+)\r\n" + \
@@ -22,23 +30,45 @@ BIN_EXE = r"ucr_mdtw/bin/UCR_MDTW.exe"
 BIN_EXE_NO_OPTIM = r"ucr_mdtw/bin/UCR_MDTW_no_optim.exe"
 MAX_DIST = 1e20
 
+def generate_sample(data: np.array, labels: np.array, n_samples: int, path: str, random_state: Optional[int] = None):
+    normalize = lambda x: zscore(data[x], 1)
+    average = lambda x: np.average(x, 0)
 
-def zscore(a, axis, ddof):
-    a = np.asanyarray(a)
-    mns = a.mean(axis=axis)
-    sstd = a.std(axis=axis, ddof=ddof)
+    random_state = np.random.RandomState(random_state)
+    idxs = np.arange(data.shape[0])
+    possible_labels = np.unique(labels)
+    dataset_idxs = resample(idxs, n_samples=200, random_state=random_state)
+    train_samples = []
+    test_samples = []
 
-    # very bad lifehack
-    sstd[sstd == 0] = 1
+    for label in possible_labels:
+        train, test = train_test_split(dataset_idxs[labels[dataset_idxs] == label], test_size=0.2)
+        test_samples.extend(test)
+        train_samples.append(list(map(normalize, train)))
 
-    return (a - mns) / sstd
+    averaged = map(average, train_samples)
+    dba_averaged = map(lambda x: performDBA(x), train_samples)
+
+    random_state.shuffle(test_samples)
+    timeseries = zscore(np.hstack(map(normalize, test_samples)), 1)
+
+    keys = pd.DataFrame({
+        "start": [data.shape[-1] * i for i in range(len(test_samples))],
+        "labels": labels[test_samples]
+    })
+
+    for label, sample, dba_sample in zip(possible_labels, averaged, dba_averaged):
+        np.savetxt(os.path.join(path, "averaged_{0}.csv".format(label)), sample.T)
+        np.savetxt(os.path.join(path, "dba_averaged_{0}.csv".format(label)), dba_sample.T)
+
+    np.savetxt(os.path.join(path, "character_trajectories.csv"), timeseries.T)
+    keys.to_csv(os.path.join(path, "character_trajectories_labels.csv"))
 
 
 def search_dtw(closest_series_num: int, subseq_len: int, warp_window: float, 
            file_path: str, query_path: str, distance_fun: int, optimize=True) -> (dict, float):
     
-    command = [
-        BIN_EXE if optimize else BIN_EXE_NO_OPTIM,
+    command = [ BIN_EXE if optimize else BIN_EXE_NO_OPTIM,
         file_path,
         query_path,
         str(subseq_len), str(warp_window), str(closest_series_num), str(distance_fun)]
