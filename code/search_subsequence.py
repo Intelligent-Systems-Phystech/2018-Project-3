@@ -61,8 +61,8 @@ def generate_sample(data: np.array, labels: np.array, n_samples: int, path: str,
         np.savetxt(os.path.join(path, "averaged_{0}.csv".format(label)), sample.T)
         np.savetxt(os.path.join(path, "dba_averaged_{0}.csv".format(label)), dba_sample.T)
 
-    np.savetxt(os.path.join(path, "character_trajectories.csv"), timeseries.T)
-    keys.to_csv(os.path.join(path, "character_trajectories_labels.csv"))
+    np.savetxt(os.path.join(path, "timeseries.csv"), timeseries.T)
+    keys.to_csv(os.path.join(path, "labels.csv"))
 
 
 def search_dtw(closest_series_num: int, subseq_len: int, warp_window: float, 
@@ -172,4 +172,40 @@ def decision(real_starts: list, choosen_starts: list, real_len: int,
             break
 
     return found_num / real_num
+
+
+def experiment(dist, dba, base_path, n_samples, n_repeat, closest_num, subseq_len, true_len, warp=0.1, optimize=True):
+    results = []
+    total_elapsed = 0
+    prefix = "dba_" if dba else ""
+
+    for item in range(n_samples):
+        elapsed_list = []
+        results_list = []
+        for i in range(n_repeat):
+            path = os.path.join(base_path, str(i))
+            keys = pd.read_csv(os.path.join(path, "labels.csv"), index_col=0)
+            closest, elapsed = search_dtw(closest_num, subseq_len, warp,
+                             os.path.join(path, "timeseries.csv"),
+                             os.path.join(path, prefix + "averaged_{0}.csv".format(item)),
+                             dist, optimize)
+            
+            expected = np.array(list(closest.keys()))
+            true_starts = keys[keys.labels == item].start.values
+            total_elapsed += elapsed
+            elapsed_list.append(elapsed)
+
+            results.append(decision(true_starts, expected, true_len, subseq_len))
+            results_list.append(results[-1])
+        print(results_list)
+
+        print("item: {0:>3d} | {1:.3f} +- {2:.3f}| {3:.3f} +- {4:.3f} ".format(
+            item,
+            np.mean(results_list),
+            np.std(results_list),
+            np.mean(elapsed_list),
+            np.std(elapsed_list)))
+
+    print("{0:.3f}  {1:.3f}".format(sum(results) / len(results), total_elapsed / len(results)))
+    
 
