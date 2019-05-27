@@ -65,14 +65,14 @@ def generate_sample(data: np.array, labels: np.array, n_samples: int, path: str,
     keys.to_csv(os.path.join(path, "labels.csv"))
 
 
-def search_dtw(closest_series_num: int, subseq_len: int, warp_window: float, 
+def search_dtw(closest_series_num: int, subseq_len: int, warp_window: float,
            file_path: str, query_path: str, distance_fun: int, optimize=True) -> (dict, float):
-    
+
     command = [ BIN_EXE if optimize else BIN_EXE_NO_OPTIM,
         file_path,
         query_path,
         str(subseq_len), str(warp_window), str(closest_series_num), str(distance_fun)]
-    
+
     t = time()
     stdout = subprocess.check_output(command).decode()
     t = time() - t
@@ -92,15 +92,15 @@ def search_dtw(closest_series_num: int, subseq_len: int, warp_window: float,
     return closest, t
 
 
-def search_ed(closest_series_num: int, subseq_len: int, warp_window: float, 
+def search_ed(closest_series_num: int, subseq_len: int, warp_window: float,
            data_path: str, query_path: str, normalize=True) -> (dict, float):
 
     """Search the most similar subseries
 
-        The distance beetween series define as 
+        The distance beetween series define as
          ed(\{a_1, \dots, a_n\}, \{b_1, \dots, b_n\}) = \sqrt{\sum \| a_i - b_i \|_2}
     """
-    
+
     last_location = -subseq_len
     last_dist = MAX_DIST
     closest = SortedDict()
@@ -133,17 +133,17 @@ def search_ed(closest_series_num: int, subseq_len: int, warp_window: float,
 
 def decision(real_starts: list, choosen_starts: list, real_len: int,
              expected_len: int, overlap=0.8, found_twice=False) -> float:
-             
+
     """Ratio of search subseqence
-    
+
     Args:
         real_starts: starts of current subseries type
         choosen_starts: predicted starts
-        real_len: real len of subseqences in series 
+        real_len: real len of subseqences in series
         expected_len: length of sequence that was looked for
         overlap: overlap for mark sequence as found
         found_twice: consider two choosen in one real subseq as two found
-    
+
     Returns:
         float: ratio of the number found subsequence to all
     """
@@ -189,7 +189,7 @@ def experiment(dist, dba, base_path, n_samples, n_repeat, closest_num, subseq_le
                              os.path.join(path, "timeseries.csv"),
                              os.path.join(path, prefix + "averaged_{0}.csv".format(item)),
                              dist, optimize)
-            
+
             expected = np.array(list(closest.keys()))
             true_starts = keys[keys.labels == item].start.values
             total_elapsed += elapsed
@@ -197,7 +197,6 @@ def experiment(dist, dba, base_path, n_samples, n_repeat, closest_num, subseq_le
 
             results.append(decision(true_starts, expected, true_len, subseq_len))
             results_list.append(results[-1])
-        print(results_list)
 
         print("item: {0:>3d} | {1:.3f} +- {2:.3f}| {3:.3f} +- {4:.3f} ".format(
             item,
@@ -207,5 +206,5 @@ def experiment(dist, dba, base_path, n_samples, n_repeat, closest_num, subseq_le
             np.std(elapsed_list)))
 
     print("{0:.3f}  {1:.3f}".format(sum(results) / len(results), total_elapsed / len(results)))
-    
+
 
