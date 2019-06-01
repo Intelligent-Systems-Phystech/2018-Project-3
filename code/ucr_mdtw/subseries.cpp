@@ -296,29 +296,31 @@ int main(int argc, char *argv[])
 
                         dist = dtw(tz, search_query, cb, query_len, warp_window, distance_function,
                             best_in_choosed);
+		        	
+			if (best_locations.begin()->first > dist or best_locations.size() < closest_series_num)
+			{
+			    current_location = (it) * (EPOCH - query_len + 1) + i - query_len + 1;
 
-                        if (best_locations.begin()->first > dist or best_locations.size() < closest_series_num)
-                        {
-                            current_location = (it) * (EPOCH - query_len + 1) + i - query_len + 1;
+			    if (best_location_last_added.first <= current_location - query_len)
+			    {
+				if (best_locations.size() == closest_series_num)
+				    best_locations.erase(best_locations.begin()->first);
+				best_locations[dist] = current_location;
+				best_location_last_added.first = current_location;
+				best_location_last_added.second = dist;
+			    }
+			    else if (dist < best_location_last_added.second)
+			    {
+				best_locations.erase(best_location_last_added.second);
+				best_locations[dist] = current_location;
+				best_location_last_added.first = current_location;
+				best_location_last_added.second = dist;
+			    }
 
-                            if (best_location_last_added.first <= current_location - query_len)
-                            {
-                                if (best_locations.size() == closest_series_num)
-                                    best_locations.erase(best_locations.begin()->first);
-                                best_locations[dist] = current_location;
-                                best_location_last_added.first = current_location;
-                                best_location_last_added.second = dist;
-                            }
-                            else if (dist < best_location_last_added.second )
-                            {
-                                best_locations.erase(best_location_last_added.second);
-                                best_locations[dist] = current_location;
-                                best_location_last_added.first = current_location;
-                                best_location_last_added.second = dist;
-                            }
+			    if (best_locations.size() == closest_series_num)
+				best_in_choosed = best_locations.begin()->first;
+			}
 
-                            best_in_choosed = best_locations.begin()->first;
-                        }
                     } else
                     {
                         lb_kim = lb_kim_hierarchy(query, search_query, j, query_len, m_ex, std,
@@ -405,7 +407,8 @@ int main(int argc, char *argv[])
                                             best_location_last_added.second = dist;
                                         }
 
-                                        best_in_choosed = best_locations.begin()->first;
+                                    	if (best_locations.size() == closest_series_num)
+					    best_in_choosed = best_locations.begin()->first;
                                     }
                                 } else
                                     keogh2++;
@@ -414,8 +417,6 @@ int main(int argc, char *argv[])
                         } else
                             kim++;
                     }
-                            /// Use a constant lower bound to prune the obvious subsequence
-
 
                     /// Reduce obsolute points from sum and sum square
                     for (unsigned int s = 0; s < DIM; s++)
@@ -483,8 +484,9 @@ int main(int argc, char *argv[])
          << std::right << std::setw(8) << "dist" << endl
          << std::string(16, '-') << endl;
 
+    int counter = 0;
     for (auto it = best_locations.rbegin(); it != best_locations.rend(); ++it)
-        cout << std::left << std::setw(8) << it->second
+        cout << counter++ << " " << std::left << std::setw(8) << it->second
              << std::right << std::setw(8) << it->first << endl;
 
     return 0;
