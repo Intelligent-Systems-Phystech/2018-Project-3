@@ -38,7 +38,7 @@
   \newcommand*\fsize{\dimexpr\f@size pt\relax}%
   \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
   \ifx\svgwidth\undefined%
-    \setlength{\unitlength}{660.87011719bp}%
+    \setlength{\unitlength}{842.40002441bp}%
     \ifx\svgscale\undefined%
       \relax%
     \else%
@@ -50,13 +50,13 @@
   \global\let\svgwidth\undefined%
   \global\let\svgscale\undefined%
   \makeatother%
-  \begin{picture}(1,0.72825853)%
+  \begin{picture}(1,0.57226746)%
     \lineheight{1}%
     \setlength\tabcolsep{0pt}%
     \put(0,0){\includegraphics[width=\unitlength,page=1]{example.pdf}}%
-    \put(-0.0016033,0.66577587){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X^1$\end{tabular}}}}%
-    \put(-0.00154879,0.23328572){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X^2$\end{tabular}}}}%
-    \put(0.06702846,0.00405477){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X_{t=25}$\end{tabular}}}}%
+    \put(0.02083971,0.52534364){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X^1$\end{tabular}}}}%
+    \put(0.02459303,0.18769429){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X^2$\end{tabular}}}}%
+    \put(0.06975334,0.00351977){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X_{t=25}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=2]{example.pdf}}%
   \end{picture}%
 \endgroup%
