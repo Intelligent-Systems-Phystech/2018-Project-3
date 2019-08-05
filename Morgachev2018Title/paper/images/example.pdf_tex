@@ -38,7 +38,7 @@
   \newcommand*\fsize{\dimexpr\f@size pt\relax}%
   \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
   \ifx\svgwidth\undefined%
-    \setlength{\unitlength}{842.40002441bp}%
+    \setlength{\unitlength}{843.99993896bp}%
     \ifx\svgscale\undefined%
       \relax%
     \else%
@@ -50,13 +50,27 @@
   \global\let\svgwidth\undefined%
   \global\let\svgscale\undefined%
   \makeatother%
-  \begin{picture}(1,0.57226746)%
+  \begin{picture}(1,0.48428043)%
     \lineheight{1}%
     \setlength\tabcolsep{0pt}%
     \put(0,0){\includegraphics[width=\unitlength,page=1]{example.pdf}}%
-    \put(0.02083971,0.52534364){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X^1$\end{tabular}}}}%
-    \put(0.02459303,0.18769429){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X^2$\end{tabular}}}}%
-    \put(0.06975334,0.00351977){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X_{t=25}$\end{tabular}}}}%
+    \put(0.9587403,0.44941069){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=2]{example.pdf}}%
+    \put(0.9587403,0.42381458){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$Y$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{example.pdf}}%
+    \put(0.04777771,0.00420096){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}0\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{example.pdf}}%
+    \put(0.2561767,0.00420096){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}100\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{example.pdf}}%
+    \put(0.4754028,0.00420096){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}200\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{example.pdf}}%
+    \put(0.69462891,0.00420096){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}300\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{example.pdf}}%
+    \put(0.91385502,0.00420096){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}400\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{example.pdf}}%
+    \put(0.06051294,0.00793883){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X_{t=18}$\end{tabular}}}}%
+    \put(0.01544309,0.38464067){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X^1$\end{tabular}}}}%
+    \put(0.01544309,0.14041627){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$X^2$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{example.pdf}}%
   \end{picture}%
 \endgroup%
