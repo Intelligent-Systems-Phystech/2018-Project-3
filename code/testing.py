@@ -12,15 +12,16 @@ from data_processing import DataIterator
 from models import Autoregression
 from dtw_wrapper import DtwWrapper
 
+
 default_params = {
     "nrow": 100000,
     "window_size": 10,
-    "element_length": 50,
-    "path": "../data/Eye-Motion/ECoG.csv",
-    "overlap": 10,
+    "element_length": 200,
+    "path": "../data/clustering/accelerometer2.csv",
+    "overlap": 0,
     "shuffle": True,
-    "sample_size": 30,
-    "chanel_num": 32,
+    "sample_size": 1000,
+    "chanel_num": 3,
     "repeat_num": 1
 }
 
@@ -49,6 +50,7 @@ class TestFactory:
         self.res_dir = "../data/results/{0}".format(counter)
         os.mkdir("../data/results/{0}".format(counter))
 
+
     def get_n(self, n):
         items = []
         labels = []
@@ -61,7 +63,9 @@ class TestFactory:
 
         return items, np.array(labels), infos
 
-    def test_dtw(self, dtw_function, distance_function, description=None, sample_size=-1, dump_result=False, dtw_args={}, cluster_dist="complete"):
+
+    def test_dtw(self, dtw_function, distance_function, description=None, sample_size=-1, dump_result=False, dtw_args={}, cluster_dist="complete",
+        external=False, external_distances_path=None):
         """
             work with cluster_dist from: complete, average, weighted
             the best is complete now
@@ -73,7 +77,10 @@ class TestFactory:
         if self.X is None:
             self.set_sample(sample_size)
 
-        self.dtw_wrapper = DtwWrapper(self.X, hash(self.infos), dtw_function, distance_function, dtw_args=dtw_args)
+        self.dtw_wrapper = DtwWrapper(self.X, hash(self.infos), dtw_function, distance_function,
+            dtw_args=dtw_args,
+            external=external,
+            external_distances_path=external_distances_path)
 
         start_time = time.time()
         # Kostyl 
@@ -86,6 +93,7 @@ class TestFactory:
         end_time = time.time()
         t = "{0:.3f}".format((end_time - start_time) / self.repeat_num)
         print("Elapsed time: {0}".format(t))
+
         info = ClusteredInfoDTW(self.X, Z, self.element_length, self.dtw(dtw_function, distance_function, dtw_args),
                                 self.chanel_num, label=self.classification_label)
         if dump_result:
@@ -95,6 +103,7 @@ class TestFactory:
         self.results.append((description, datetime.datetime.now(), t))
  
         return info
+
 
     def ar_clustering(self, window_size=10, dump_result=False, description=None, normalization=False):
         start_time = time.time()
@@ -121,17 +130,21 @@ class TestFactory:
 
         return info
 
+
     def dtw(self, dtw_function, distance_function, dtw_args):
         return lambda x, y: (dtw_function(x, y, distance_function, **dtw_args))
+
 
     def dump_result(self):
         with open("{0}/results.pkl".format(self.res_dir), "wb") as f:
             dill.dump(self.results, f)
 
+
     @staticmethod
     def load(file):
         with open(file, "rb") as f:
             return dill.load(f)
+
 
     def set_sample(self, n=-1, items=None, labels=None):
         if items is not None and labels is not None:
@@ -143,6 +156,7 @@ class TestFactory:
         self.X = items
         self.classification_label = labels
         self.infos = tuple(infos)
+        
         return items, labels
 
 
@@ -158,10 +172,12 @@ class ClusteredInfo:
         if label is not None:
             self.label = label
     
+
     @staticmethod
     def load(f):
         with open(f, "rb") as f:
             return dill.load(f)
+
 
     def cluster(self, cluster_num):
         self.cluster_num = cluster_num
@@ -170,10 +186,12 @@ class ClusteredInfo:
         self.stats = pd.DataFrame(index=unique_elements, data=counts_elements, columns=["count"])
         self.stats = self.stats.sort_values(by="count", ascending=False)
 
+
     def visualize(self):
         fig = plt.figure(figsize=(25, 10))
         dn = dendrogram(self.Z)
-    
+
+
     def show_chanel(self, ch=1, label=1, max_num=5):
         idxs = np.where(self.clusters_labels == label)[0]
         time = np.linspace(0, self.element_length - 1, self.element_length)
@@ -189,6 +207,7 @@ class ClusteredInfo:
             ax[i][0].grid()
                 
         plt.tight_layout();
+
 
     def clusters_compare_table(self, label, num_series=3, max_chanels=3, z_normalize=False):
         idxs = np.where(self.clusters_labels == label)[0]
@@ -216,6 +235,7 @@ class ClusteredInfo:
                 ax[df_id][ch].yaxis.label.set_color("red")
         
         plt.tight_layout();
+
 
     def comparing_at_one(self, label, num_series=3, max_chanel=3, z_normalize=False):
         idxs = np.where(self.clusters_labels == label)[0]

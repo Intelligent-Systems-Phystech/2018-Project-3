@@ -2,6 +2,8 @@
 // Created by Смирнов Влад on 2019-04-28.
 //
 
+// g++ ./DTW_matrix.cpp -o bin/UCR_pairwise.exe --std=c++11 
+// if you use x86_64-w64-mingw32-g++ add -static-libgcc -static-libstdc++
 #include "DTW_matrix.h"
 
 #include <iostream>
@@ -19,6 +21,7 @@ using namespace std;
 void getDtwMatrix(char* pathName);
 double dtw(double** fRow, double** sRow);
 double dist(double* a, double* b);
+double cosine_dist(double *x, double *y);
 
 
 int dim = 3;
@@ -127,7 +130,9 @@ void getDtwMatrix(char* pathName) {
 
     /// print dtw Matrix
 
-    fw = fopen("matrix_result.txt","w");
+    std::string buf(pathName);
+    buf.append("_results");
+    fw = fopen(buf.c_str(), "w");
 
     for (int i = 0; i < num_size; i++) {
 
@@ -257,19 +262,23 @@ double dist(double* a, double* b) {
     double d = 0.0;
 
     switch (distType) {
-        case 0: /// L2
+        case 1: /// L1
+            for (int i = 0; i < dim; i++) {
+                d += abs(a[i] - b[i]);
+            }
+            
+            break;
 
+        case 2: /// L2
             for (int i = 0; i < dim; i++) {
                 d += (a[i] - b[i]) * (a[i] - b[i]);
             }
 
             break;
 
-        case 1: /// L1
+        case 3: /// cosine
 
-            for (int i = 0; i < dim; i++) {
-                d += abs(a[i] - b[i]);
-            }
+            d = cosine_dist(a, b);
 
             break;
     }
@@ -278,8 +287,27 @@ double dist(double* a, double* b) {
 
 }
 
+double cosine_dist(double *x, double *y)
+{
+    double mul = 0.0;
+    double d_x = 0.0;
+    double d_y = 0.0 ;
+
+    for(unsigned int i = 0; i < dim; ++i)
+    {
+        mul += x[i] * y[i];
+        d_x += x[i] * x[i];
+        d_y += y[i] * y[i];
+    }
+
+    if (d_x == 0.0f || d_y == 0.0f)
+        return 1;
+
+    return 1 - abs(mul) / (sqrt(d_x) * sqrt(d_y));
+}
+
 /// argv : [1] path [2] dimensions [3] dist type {0 - L2, 1 - L1} [4] sequence length [5] window length {positive, even, less or equal to "sequence length"}
-int main(  int argc , char *argv[] ) {
+int main(int argc , char *argv[] ) {
 
     /// If not enough input, display an error.
     if (argc < 5) {
